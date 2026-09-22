@@ -68,12 +68,6 @@ function App() {
     }
   };
 
-  //   const handleClickFile = async (path: string) => {
-  //     // await fileMutate(path);
-  //     setFile(path);
-  //     setHistory(prev => [...prev, path]);
-  //   };
-
   return (
     <>
       {isLoading && <h2>Loading...</h2>}
