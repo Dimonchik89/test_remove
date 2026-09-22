@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import './App.css';
 import type { DriveDataInterface, SingleDriveData } from './types/type';
 import { createPath } from './utils/createPath';
 import { analyzePath } from './utils/analyzePath';
+import { axiosInstance } from './utils/axiosInstance';
 
 function App() {
   const [history, setHistory] = useState<string[]>([]);
@@ -14,7 +14,7 @@ function App() {
   const { data, isLoading, isError, error } = useQuery<DriveDataInterface[]>({
     queryKey: ['drive'],
     queryFn: async () => {
-      const { data } = await axios(
+      const { data } = await axiosInstance(
         `${import.meta.env.VITE_BASE_URL}/file/local-drive`,
       );
       return data;
@@ -28,7 +28,7 @@ function App() {
     error: mutateError,
   } = useMutation({
     mutationFn: async (path: string): Promise<SingleDriveData[]> => {
-      const { data } = await axios({
+      const { data } = await axiosInstance({
         url: `${import.meta.env.VITE_BASE_URL}/file/get-drive-data`,
         method: 'POST',
         data: { path },
