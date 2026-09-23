@@ -63,7 +63,8 @@ function App() {
       await mutate(path);
       setHistory(prev => [...prev, path]);
     } else if (typePath.isFile) {
-      setFilePath(path);
+      const normalizeFilePath = path.startsWith('/') ? path : `/${path}`;
+      setFilePath(normalizeFilePath);
       setHistory(prev => [...prev, path]);
     }
   };
