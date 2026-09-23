@@ -113,6 +113,7 @@ function App() {
       {filePath && fileType === 'video' && (
         <video
           controls
+          crossOrigin="anonymous"
           src={`${import.meta.env.VITE_BASE_URL}/file${filePath}`}
         />
       )}
