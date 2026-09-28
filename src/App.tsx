@@ -83,7 +83,7 @@ function App() {
     setTheme();
   }, []);
 
-  console.log(driveData);
+  console.log(history);
 
   return (
     <main className="bg-white dark:bg-gray-600 py-5 min-h-screen">
