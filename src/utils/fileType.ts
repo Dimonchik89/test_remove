@@ -56,3 +56,5 @@ export const FILE_CATEGORIES = {
     extensions: ['zip', 'rar', '7z', 'tar', 'gz', 'bz2'],
   },
 };
+
+export type FileCategoriesType = keyof typeof FILE_CATEGORIES;

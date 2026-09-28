@@ -1,17 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import './App.css';
 import type { DriveDataInterface, SingleDriveData } from './types/type';
 import { createPath } from './utils/createPath';
 import { analyzePath } from './utils/analyzePath';
 import { axiosInstance } from './utils/axiosInstance';
+import { setTheme } from './utils/themeToggle';
+import ThemeToggleButton from './components/button/ThemeToggleButton';
+import Container from './components/container/Container';
+import HardDriveIcon from './components/icons/HardDriveIcon';
+import FolderIcon from './components/icons/FolderIcon';
+import FileCategoryIcon from './components/fileCategory/FileCategory';
+import type { FileCategoriesType } from './utils/fileType';
 
 function App() {
   const [history, setHistory] = useState<string[]>([]);
   const [fileType, setFileType] = useState<string>();
   const [filePath, setFilePath] = useState('');
 
-  const { data, isLoading, isError, error } = useQuery<DriveDataInterface[]>({
+  const {
+    data: drives,
+    isLoading: isLoadingDrives,
+    isError: isErrorDrives,
+    error: errorDrives,
+  } = useQuery<DriveDataInterface[]>({
     queryKey: ['drive'],
     queryFn: async () => {
       const { data } = await axiosInstance(
@@ -22,10 +34,10 @@ function App() {
   });
   const {
     mutate,
-    data: mutateData,
-    isPending,
-    isError: isMutateError,
-    error: mutateError,
+    data: driveData,
+    isPending: isPendingDriveData,
+    isError: isErrorDriveData,
+    error: errorDriveData,
   } = useMutation({
     mutationFn: async (path: string): Promise<SingleDriveData[]> => {
       const { data } = await axiosInstance({
@@ -37,8 +49,6 @@ function App() {
       return data;
     },
   });
-
-  console.log(history, isPending, isMutateError, mutateError);
 
   //   const {
   //     mutate: fileMutate,
@@ -69,72 +79,132 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    setTheme();
+  }, []);
+
+  console.log(driveData);
+
   return (
-    <>
-      {isLoading && <h2>Loading...</h2>}
-      {isError && <h2>{error.message}</h2>}
-      {data && (
-        <ul>
-          {data?.map(item => {
-            return (
-              <li key={item.fs + item.available}>
-                <button onClick={() => handleClick(item.mount)}>
-                  {item.mount || item.fs}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <hr />
-      <h3>Drive data</h3>
-      {mutateData && (
-        <ul>
-          {mutateData.map(item => {
-            const path = createPath({
-              name: item.name,
-              parentPath: item.parentPath,
-            });
+    <main className="bg-white dark:bg-gray-600 py-5 min-h-screen">
+      <Container>
+        <div className="flex justify-end">
+          <ThemeToggleButton />
+        </div>
 
-            const typePath = analyzePath(path);
-            console.log('typePath.isDirectory', typePath.isDirectory);
-            console.log('typePath.isFile', typePath.isFile);
+        {isLoadingDrives && (
+          <h2 className="text-black dark:text-white">Loading...</h2>
+        )}
+        {isErrorDrives && <h2>{errorDrives.message}</h2>}
+        {drives && (
+          <ul>
+            {drives?.map(item => {
+              return (
+                <li key={item.fs + item.available}>
+                  <button
+                    onClick={() => handleClick(item.mount)}
+                    className="cursor-pointer text flex gap-2"
+                  >
+                    <HardDriveIcon />
+                    {item.mount || item.fs}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <hr />
+        <h3 className="text">Drive data</h3>
+        {isPendingDriveData && <h2 className="text">Loading</h2>}
+        {isErrorDriveData && <h2 className="text">{errorDriveData.message}</h2>}
+        {driveData && (
+          <ul className="ml-5 flex flex-col gap-2">
+            {driveData.map(item => {
+              const path = createPath({
+                name: item.name,
+                parentPath: item.parentPath,
+              });
 
-            // setPathType(typePath);
+              const typePath = analyzePath(path);
+              console.log('typePath', typePath.category);
 
-            return (
-              <li key={item.parentPath + item.name}>
-                <button onClick={() => handleClick(path)}>{path}</button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      <hr />
-      {filePath && fileType === 'video' && (
-        <video
-          controls
-          crossOrigin="anonymous"
-          src={`${import.meta.env.VITE_BASE_URL}/file${filePath}`}
-        />
-      )}
-      {filePath && fileType === 'audio' && (
-        <audio
-          controls
-          src={`${import.meta.env.VITE_BASE_URL}/file${filePath}`}
-        />
-      )}
-      {filePath && fileType === 'image' && (
-        <img
-          src={`${import.meta.env.VITE_BASE_URL}/file${filePath}`}
-          alt={filePath}
-        />
-      )}
-      {filePath && fileType === 'document' && (
-        <iframe src={`${import.meta.env.VITE_BASE_URL}/file${filePath}`} />
-      )}
-      {/* ДОБАВИТЬ РАБОТУ С ТЕКСОТЫМИ ФАЙЛАМИ (ЛУЧШЕ ЧИТАТЬ НО МОЖНО НА КРАЙНЯК Ы СКАЧИВАТЬ) */}
-    </>
+              // setPathType(typePath);
+
+              return (
+                <li key={item.parentPath + item.name}>
+                  <button
+                    onClick={() => handleClick(path)}
+                    className="flex gap-2 text cursor-pointer"
+                  >
+                    {item.isDirectory && <FolderIcon />}
+                    {item.isFile && (
+                      <FileCategoryIcon
+                        category={typePath?.category as FileCategoriesType}
+                      />
+                    )}
+                    {path}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <hr />
+        {filePath && fileType === 'video' && (
+          <>
+            <video
+              controls
+              crossOrigin="anonymous"
+              src={`${import.meta.env.VITE_BASE_URL}/file/stream${filePath}`}
+            />
+            <a
+              href={`${import.meta.env.VITE_BASE_URL}/file/download${filePath}`}
+              download
+            >
+              Download File {filePath}
+            </a>
+          </>
+        )}
+        {filePath && fileType === 'audio' && (
+          <>
+            <audio
+              controls
+              src={`${import.meta.env.VITE_BASE_URL}/file/stream${filePath}`}
+            />
+            <a
+              href={`${import.meta.env.VITE_BASE_URL}/file/download${filePath}`}
+              download
+            >
+              Download File {filePath}
+            </a>
+          </>
+        )}
+        {filePath && fileType === 'image' && (
+          <>
+            <img
+              src={`${import.meta.env.VITE_BASE_URL}/file/stream${filePath}`}
+              alt={filePath}
+            />
+            <a
+              href={`${import.meta.env.VITE_BASE_URL}/file/download${filePath}`}
+              download
+            >
+              Download File {filePath}
+            </a>
+          </>
+        )}
+        {filePath && fileType === 'document' && (
+          //   <iframe src={`${import.meta.env.VITE_BASE_URL}/file${filePath}`} />
+          <a
+            href={`${import.meta.env.VITE_BASE_URL}/file/download${filePath}`}
+            download
+          >
+            Download File {filePath}
+          </a>
+        )}
+        {/* ДОБАВИТЬ РАБОТУ С ТЕКСОТЫМИ ФАЙЛАМИ (ЛУЧШЕ ЧИТАТЬ НО МОЖНО НА КРАЙНЯК Ы СКАЧИВАТЬ) */}
+      </Container>
+    </main>
   );
 }
 
